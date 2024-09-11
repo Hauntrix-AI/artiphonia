@@ -128,3 +128,23 @@ export const signOutAction = async () => {
   await supabase.auth.signOut();
   return redirect("/sign-in");
 };
+
+export const getProfile = async (userId: string) => {
+    const supabase = createClient();
+
+    const { data: profiles, error } = await supabase.from('profiles').select().match({ id: userId })
+
+    if (error) {
+        return error.message;
+    }
+
+    return profiles[0];
+}
+
+interface Profile {
+  first_name: string
+  last_name: string
+  bio: string
+  avatar: FileList
+}
+
