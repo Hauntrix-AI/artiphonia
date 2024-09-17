@@ -6,7 +6,7 @@ export interface IProfile {
 }
 
 export type Profile = {
-    profile: IProfile
+    profile: IProfile | null
 }
 
 export interface IProject {
@@ -17,5 +17,5 @@ export interface IProject {
 }
 
 export type Project = {
-    project: IProject
+    project: IProject | null
 }
