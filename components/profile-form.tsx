@@ -4,42 +4,56 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { profilesRowSchema } from "@/schemas";
 import { SubmitButton } from "./submit-button";
+import { Profile, IProfile } from "@/utils/types";
+import { saveProfile } from "@/app/actions";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
-interface IFormInput {
-  first_name: string
-  last_name: string
-  bio: string
-  avatar: FileList
-  id: string
-}
+export default function ProfileForm(profile: Profile) {
+  const router = useRouter();
 
-export default function ProfileForm(profile: string[] | any, user: any) {
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<IFormInput>({
+  } = useForm<IProfile>({
      resolver: zodResolver(profilesRowSchema)
-  })
-  const onSubmit = (data: any) => { console.log(data) }
+  });
+  
+  const onSubmit = (data: any) => { 
+    saveProfile(data).then((result: any) => {
+      if (result.error) {
+        toast.error(result.error.message);
+      } else {
+        toast.success("Profile updated successfully!");
+      }
+    });
+
+    router.push("/dashboard");
+  }
+
+  const profile_data = profile.profile;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <input {...register("first_name")} defaultValue={profile.first_name}/>
-      <p>{errors.first_name?.message}</p>
+    <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 gap-2">
+      <div className="col-span-1 gap-2">
+        <label htmlFor="first_name" className="flex">First Name</label>
+        <input {...register("first_name")} defaultValue={profile_data?.first_name} className="flex w-full" />
+      </div>
 
-      <input {...register("last_name")} defaultValue={profile.last_name} />
-      <p>{errors.last_name?.message}</p>
+      <div className="col-span-1 gap-2">
+        <label htmlFor="last_name" className="flex">Last Name</label>
+        <input {...register("last_name")} defaultValue={profile_data?.last_name} className="flex w-full" />
+      </div>
 
-      <input {...register("bio")} defaultValue={profile.bio} />
-      <p>{errors.bio?.message}</p>
+      <div className="col-span-2">
+        <label htmlFor="bio" className="flex w-full">Bio</label>
+        <input {...register("bio")} defaultValue={profile_data?.bio} className="flex w-full" />
+      </div>
 
-      <input type="file" {...register("avatar")} />
-      <p>{errors.avatar?.message}</p>
+      <input type="hidden" {...register("id")} value={profile_data?.id} />
 
-      <input type="hidden" {...register("id")} defaultValue={user.id} />
-
-      <SubmitButton>Submit</SubmitButton>
+      <SubmitButton className="w-auto col-span-2">Submit</SubmitButton>
     </form>
   )
 

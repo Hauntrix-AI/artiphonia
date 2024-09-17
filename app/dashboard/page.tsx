@@ -1,8 +1,11 @@
+import FetchDataSteps from "@/components/tutorial/fetch-data-steps";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
+import { InfoIcon } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default async function ProjectsPage() {
+export default async function DashboardPage() {
   const supabase = createClient();
 
   const {
@@ -16,8 +19,8 @@ export default async function ProjectsPage() {
   const {data: projects } = await supabase.from('projects').select().match({ user_id: user.id });
 
   return (
-    <div className="flex-1 w-full flex flex-col gap-12">
-      <Link href="/projects/new">Create New Project</Link>
+    <div className="flex-1 w-full flex flex-col gap-12 max-w-3xl mx-auto pt-24">
+      <Link href="/projects/new"><Button>Create New Project</Button></Link>
 
       <div className="w-full grid-cols-3 grid gap-6">
             {

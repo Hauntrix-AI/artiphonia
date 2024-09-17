@@ -2,16 +2,27 @@ import { signOutAction } from "@/app/actions";
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { createClient } from "@/utils/supabase/server";
+import { IProfile } from "@/utils/types";
 
 export default async function AuthButton() {
+  const supabase = createClient();
+
   const {
     data: { user },
-  } = await createClient().auth.getUser();
+  } = await supabase.auth.getUser();
+
+  const {data: profile } = await supabase.from('profiles').select().match({ id: user?.id }).single<IProfile>();
 
   return user ? (
     <div className="flex items-center gap-4">
-      Hey, {user.email}!
-      <form onSubmit={signOutAction}>
+      {
+        profile?.first_name ? (
+          <span>Hey, <Link className="inline" href="/profile">{profile.first_name}!</Link></span>
+        ) : (
+          <span>Hey, <Link className="inline" href="/profile">{user.email}!</Link></span>
+        )
+      }
+      <form action={signOutAction}>
         <Button type="submit" variant={"outline"}>
           Sign out
         </Button>
