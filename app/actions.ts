@@ -172,7 +172,7 @@ export const createOrSaveProject = async (project: IProject) => {
 
   // Check if a container exists using Qovery and create one if it doesn't
   const configuration = new Configuration({
-    apiKey: process.env.QOVERY_API_TOKEN
+    apiKey: process.env.CONTAINER_API_KEY
   });
   
   const containersApi = new ContainersApi(configuration);
