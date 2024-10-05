@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { IProfile, IProject, Project } from "@/utils/types";
-import { Configuration, ContainersApi, ContainerRequest } from 'qovery-typescript-axios';
+import { Configuration, ContainersApi, ContainerRequest, ContainerRegistriesApi, ContainerRegistriesApiFactory } from 'qovery-typescript-axios';
 import axios from 'axios';
 
 export const signUpAction = async (formData: FormData) => {
@@ -171,16 +171,19 @@ export const createOrSaveProject = async (project: IProject) => {
   .select().single<Project>();
 
   // Check if a container exists using Qovery and create one if it doesn't
+
   const configuration = new Configuration({
     apiKey: process.env.CONTAINER_API_KEY
   });
   
   const containersApi = new ContainersApi(configuration);
-  
+
+  const registry = await ContainerRegistriesApiFactory(configuration).listContainerRegistry( process.env.CONTAINER_ORGANIZATION_ID!, { headers: { Authorization: `Token ${process.env.CONTAINER_API_KEY}`}})
+
   let containerInfo;
 
   try {
-    const containersResponse = await containersApi.listContainer(project.id!);
+    const containersResponse = await containersApi.listContainer(process.env.QOVERY_ENVIRONMENT_ID!, { headers: { Authorization: `Token ${process.env.CONTAINER_API_KEY}`}});
     const projectContainer = containersResponse.data.results?.find(c => c.id === project.id);
     if (projectContainer) {
       console.log('Container exists for this project');
@@ -192,7 +195,7 @@ export const createOrSaveProject = async (project: IProject) => {
       const findAvailablePort = async (startPort: number, endPort: number): Promise<number> => {
         for (let port = startPort; port <= endPort; port++) {
           try {
-            const response = await containersApi.listContainer(project.id!);
+            const response = await containersApi.listContainer(process.env.QOVERY_ENVIRONMENT_ID!, { headers: { Authorization: `Token ${process.env.CONTAINER_API_KEY}`}});
             const isPortInUse = response.data.results?.some(container => 
               container.ports?.some(p => p.external_port === port)
             );
@@ -222,7 +225,7 @@ export const createOrSaveProject = async (project: IProject) => {
         }],
         cpu: 1000,
         memory: 2048,
-        registry_id: '', // Add an empty string or appropriate registry ID
+        registry_id: registry.data.results?.at(0)?.id!, // Add an empty string or appropriate registry ID
         healthchecks: {
           readiness_probe: {
             type: {
@@ -251,7 +254,7 @@ export const createOrSaveProject = async (project: IProject) => {
         },
       };
 
-      const createContainerResponse = await containersApi.createContainer(project.id!, containerRequest);
+      const createContainerResponse = await containersApi.createContainer(process.env.QOVERY_ENVIRONMENT_ID!, containerRequest, { headers: { Authorization: `Token ${process.env.CONTAINER_API_KEY}`}});
       containerInfo = createContainerResponse.data;
       console.log('Container created successfully:', containerInfo);
     }
@@ -264,7 +267,7 @@ export const createOrSaveProject = async (project: IProject) => {
         const findAvailablePort = async (startPort: number, endPort: number): Promise<number> => {
           for (let port = startPort; port <= endPort; port++) {
             try {
-              const response = await containersApi.listContainer(project.id!);
+              const response = await containersApi.listContainer(process.env.QOVERY_ENVIRONMENT_ID!, { headers: { Authorization: `Token ${process.env.CONTAINER_API_KEY}`}});
               const isPortInUse = response.data.results?.some(container => 
                 container.ports?.some(p => p.external_port === port)
               );
@@ -281,8 +284,7 @@ export const createOrSaveProject = async (project: IProject) => {
         // Find an available port
         const availablePort = await findAvailablePort(11434, 11534);
 
-        const createContainerResponse = await containersApi.createContainer(
-          project.id!, // Add the project ID as the first argument
+        const createContainerResponse = await containersApi.createContainer(process.env.QOVERY_ENVIRONMENT_ID!, // Add the project ID as the first argument
           {
             name: `${project.name}-container`,
             description: `Container for ${project.name}`,
@@ -296,7 +298,7 @@ export const createOrSaveProject = async (project: IProject) => {
             }],
             cpu: 1000,
             memory: 2048,
-            registry_id: '', // Add an empty string or appropriate registry ID
+            registry_id: registry.data.results?.at(0)?.id!, // Add an empty string or appropriate registry ID
             healthchecks: {
               readiness_probe: {
                 type: {
@@ -323,7 +325,8 @@ export const createOrSaveProject = async (project: IProject) => {
                 failure_threshold: 3
               }
             },
-          }
+          },
+          { headers: { Authorization: `Token ${process.env.CONTAINER_API_KEY}`}}
         );
         
         containerInfo = createContainerResponse.data;
